@@ -206,7 +206,23 @@
   @media (prefers-reduced-motion:reduce){
     .orb,.aurora,header h1,header::before,header .deco{animation:none !important;}
   }
-</style>
+
+    /* 版本记录 & 隐私日志（图二 original 样式） */
+    .version-log { margin: 14px auto; max-width: 640px; text-align: left; }
+    .version-item { font-size: 12px; color: #aab; line-height: 1.7; padding: 2px 0; }
+    .version-item b { color: #c9a0ff; }
+    .privacy { margin: 16px auto; max-width: 640px; padding: 16px;
+      border: 1px solid rgba(140,120,255,.35); border-radius: 14px;
+      background: rgba(255,255,255,.04); text-align: left; }
+    .privacy-title { font-size: 14px; font-weight: 700; color: #e6e0ff; margin-bottom: 8px; }
+    .privacy-desc { font-size: 12px; color: #aab; line-height: 1.8; margin-bottom: 12px; }
+    .privacy-desc b { color: #ff9a9e; }
+    .privacy-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .privacy-actions button { flex: 1; min-width: 100px; padding: 9px 6px; font-size: 12px;
+      border: 1px solid rgba(140,120,255,.5); border-radius: 10px; color: #e6e0ff;
+      background: rgba(140,120,255,.12); cursor: pointer; transition: .2s; }
+    .privacy-actions button:hover { background: rgba(140,120,255,.3); }
+  </style>
 </head>
 <body>
 <canvas id="stars"></canvas>
@@ -290,6 +306,27 @@
       <span class="copy-title">© <span id="copyYear"></span> <span id="copyOwner">遇之</span>. 保留所有权利.</span><br>
       <span class="copy-meta">版权人：<span id="copyOwner2">遇之</span> ｜ 版本 v5.0 ｜ 本程序仅供娱乐与参考，不构成任何专业建议</span><br>
       <span class="copy-meta">开源协议：MIT ｜ 项目地址：<a class="copy-link" href="https://yuYU-chen985.github.io/age-calculator/" target="_blank" rel="noopener">yuYU-chen985.github.io/age-calculator</a></span>
+    </div>
+
+    <!-- 版本记录：v4.0 基础版 / v5.0 当前版 -->
+    <div class="version-log">
+      <div class="version-item"><b>v4.0</b> · 基础版：精准年龄 / 星座 / 生肖 / 农历 / 八字（年-月-日 三柱）</div>
+      <div class="version-item"><b>v5.0</b> · 当前版：新增时柱（四柱）、严格虚岁、春节/立春分界、下次农历生日、导出 Word</div>
+    </div>
+
+    <!-- 隐私与访问日志（纯前端，不上传姓名/出生日期/八字） -->
+    <div class="privacy">
+      <div class="privacy-title">隐私与访问日志</div>
+      <div class="privacy-desc">
+        本工具为纯前端单文件，<b>不会上传姓名、出生日期与八字</b>。<br>
+        仅在本地浏览器记录以下<b>匿名</b>访问信息，用于统计与排查：<br>
+        · 设备型号 · 匿名 IP · 所在省份 · 访问时间
+      </div>
+      <div class="privacy-actions">
+        <button type="button" id="btnShowData">查看我的数据</button>
+        <button type="button" id="btnDeleteData">删除我的数据</button>
+        <button type="button" id="btnExportLogs">导出全部日志</button>
+      </div>
     </div>
   </footer>
 
@@ -717,7 +754,29 @@ function buildReportHTML(r){
     A.push('</div>');
   }
   A.push('<div class="foot">© '+new Date().getFullYear()+' '+escHtml(COPYRIGHT_OWNER)+' · 版本 v5.0 · 保留所有权利 · 仅供娱乐参考</div>');
-  A.push('</div></body></html>');
+  A.push('</div>  <script>
+(function(){
+  var KEY = 'nljsq_visit_logs';
+  function logs(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; } }
+  function save(a){ localStorage.setItem(KEY, JSON.stringify(a)); }
+  var ua = navigator.userAgent || '';
+  var dev = /iPhone|Android|iPad|Mobile/.test(ua) ? (ua.split(/[()]/)[1] || ua) : 'Desktop';
+  var arr = logs();
+  arr.push({ time: new Date().toLocaleString(), device: dev, ip: '匿名', province: '匿名' });
+  if (arr.length > 200) arr = arr.slice(-200);
+  save(arr);
+  function $(id){ return document.getElementById(id); }
+  var show = $('btnShowData'), del = $('btnDeleteData'), exp = $('btnExportLogs');
+  if (show) show.onclick = function(){ alert('访问日志（本地）\n\n' + JSON.stringify(logs(), null, 2)); };
+  if (del) del.onclick = function(){ save([]); alert('已删除本地全部日志'); };
+  if (exp) exp.onclick = function(){
+    var blob = new Blob([JSON.stringify(logs(), null, 2)], {type:'application/json'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'visit-logs.json'; a.click();
+  };
+})();
+  </script>
+</body></html>');
   return A.join('');
 }
 function escHtml(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
