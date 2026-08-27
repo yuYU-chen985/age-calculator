@@ -288,31 +288,11 @@
     纯前端单文件 · 无需上传任何数据 · 农历/八字引擎内嵌（1800–2200）<br>
     <div class="copyright">
       <span class="copy-title">© <span id="copyYear"></span> <span id="copyOwner">遇之</span>. 保留所有权利.</span><br>
-      <span class="copy-meta">版权人：<span id="copyOwner2">遇之</span> ｜ 版本 v4.0 ｜ 本程序仅供娱乐与参考，不构成任何专业建议</span><br>
-      <span class="copy-meta">开源协议：MIT ｜ 项目地址：<a class="copy-link" href="https://yuYU-chen985.github.io/age-calculator/" target="_blank" rel="noopener">yuYU-chen985.github.io/age-calculator</a></span>
-    </div>
-    <div class="kw" id="privacyKw">💡 文档为纯前端生成（.docx），无需联网、不上传任何数据；也可「打印」直接存为 PDF。</div>
-
-    <div class="sec-title">🔐 隐私与访问日志（合规授权）</div>
-    <div class="kw" style="margin-top:0">
-      每次计算会留下<b>设备型号、匿名 IP、省份、访问时间</b>等后台日志，<b>不会记录姓名 / 出生日期 / 八字</b>。
-      数据仅在点击「同意」后上报，可随时查看或删除。
-    </div>
-    <div class="databar">
-      <button class="ghost" onclick="Privacy.viewMine()">📂 查看我的数据</button>
-      <button class="ghost" onclick="Privacy.deleteMine()">🗑️ 删除我的数据</button>
-      <button class="ghost" onclick="Privacy.exportAll()">⬇️ 导出全部日志</button>
-    </div>
-  </div>
-
-  <footer>
-    纯前端单文件 · 无需上传任何数据 · 农历/八字引擎内嵌（1800–2200）<br>
-    <div class="copyright">
-      <span class="copy-title">© <span id="copyYear"></span> <span id="copyOwner">遇之</span>. 保留所有权利.</span><br>
       <span class="copy-meta">版权人：<span id="copyOwner2">遇之</span> ｜ 版本 v5.0 ｜ 本程序仅供娱乐与参考，不构成任何专业建议</span><br>
       <span class="copy-meta">开源协议：MIT ｜ 项目地址：<a class="copy-link" href="https://yuYU-chen985.github.io/age-calculator/" target="_blank" rel="noopener">yuYU-chen985.github.io/age-calculator</a></span>
     </div>
   </footer>
+
 </div>
 
 <!-- 隐私授权弹窗 -->
@@ -736,8 +716,8 @@ function buildReportHTML(r){
     A.push('<div class="row"><span class="k">时柱</span><span class="v">'+(r.bz.time||'（时柱已跳过）')+'</span></div>');
     A.push('</div>');
   }
-  A.push('<div class="foot">© '+new Date().getFullYear()+' '+escHtml(COPYRIGHT_OWNER)+' · 保留所有权利 · 本程序仅供娱乐与参考，不构成任何专业建议</div>');
-  A.push('  <div class="toast" id="toast" role="status" aria-live="polite"></div></body></html>');
+  A.push('<div class="foot">© '+new Date().getFullYear()+' '+escHtml(COPYRIGHT_OWNER)+' · 版本 v5.0 · 保留所有权利 · 仅供娱乐参考</div>');
+  A.push('</div></body></html>');
   return A.join('');
 }
 function escHtml(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
