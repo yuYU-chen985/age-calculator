@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="年龄计算器：精准计算年龄、星座、生肖、农历、八字、五行、生辰石，支持春节/立春分界，纯前端可离线，可一键导出 Word 文档">
+<meta name="keywords" content="年龄计算器,农历,八字,星座,生肖,虚岁,Word导出,遇之">
+<meta name="author" content="遇之">
+<meta name="theme-color" content="#0f1420">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>">
+
+<title>年龄计算器 · Age Calculator</title>
+<style>
+  :root{--bg:#0b1020;--card:#161c2e;--card2:#1c2438;--line:#2a3552;--txt:#eaf0fb;--sub:#98a4c0;--brand:#6ea8ff;--brand2:#b48bff;--ok:#3fd6a0;--warn:#ffb454;--bad:#ff6b81;--info:#7cd0ff;--gold:#ffd27a;--shadow:0 18px 45px rgba(0,0,0,.45);--radius:18px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  /* ==================== 封面背景：宇宙星河 + 极光 + 星座连线 ==================== */
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    /* 基础深空渐变 */
+    background:
+      radial-gradient(1200px 800px at 12% -8%,rgba(110,168,255,.30),transparent 62%),
+      radial-gradient(1000px 700px at 100% 6%,rgba(180,139,255,.28),transparent 62%),
+      radial-gradient(900px 650px at 50% 115%,rgba(63,214,160,.13),transparent 62%),
+      linear-gradient(155deg,#080c1a 0%,#0e1530 42%,#170d2c 100%);
+    color:var(--txt);min-height:100vh;padding:28px 16px 40px;position:relative;overflow-x:hidden;}
+  /* 动态极光层（顶部+底部两道柔和极光） */
+  .aurora{position:fixed;left:-10%;right:-10%;height:55vh;z-index:0;pointer-events:none;opacity:.55;filter:blur(40px);
+    background:linear-gradient(95deg,transparent,rgba(110,168,255,.35),rgba(180,139,255,.30),rgba(63,214,160,.22),transparent);
+    animation:auroraMove 22s ease-in-out infinite;}
+  .aurora.a2{top:auto;bottom:-12vh;height:45vh;opacity:.4;animation-delay:-11s;transform:scaleY(-1);}
+  @keyframes auroraMove{0%,100%{transform:translateX(-4%) skewX(-3deg);}50%{transform:translateX(4%) skewX(3deg);}}
+  /* 星空粒子画布 */
+  #stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+  /* 星座连线画布 */
+  #constellation{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+  /* 浮动光晕装饰 */
+  .orb{position:fixed;border-radius:50%;filter:blur(60px);opacity:.45;z-index:0;pointer-events:none;animation:float 16s ease-in-out infinite;}
+  .orb.o1{width:360px;height:360px;left:-100px;top:60px;background:radial-gradient(circle,rgba(110,168,255,.55),transparent 70%);}
+  .orb.o2{width:320px;height:320px;right:-80px;top:220px;background:radial-gradient(circle,rgba(180,139,255,.5),transparent 70%);animation-delay:-6s;}
+  .orb.o3{width:280px;height:280px;left:38%;bottom:80px;background:radial-gradient(circle,rgba(63,214,160,.35),transparent 70%);animation-delay:-10s;}
+  @keyframes float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(32px,-42px) scale(1.14);}}
+  .wrap{max-width:1040px;margin:0 auto;position:relative;z-index:1;}
+  /* ===== 封面头部（玻璃拟态 + 星河氛围卡片）===== */
+  header{text-align:center;margin-bottom:24px;position:relative;
+    background:
+      radial-gradient(600px 200px at 50% -20%,rgba(110,168,255,.22),transparent 70%),
+      rgba(22,28,46,.55);
+    border:1px solid rgba(110,168,255,.28);border-radius:26px;
+    padding:38px 24px 28px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.10);overflow:hidden;}
+  /* 封面顶部光带 */
+  header::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--brand),var(--brand2),var(--gold),var(--ok),var(--brand));background-size:220% 100%;animation:shine 6s linear infinite;}
+  @keyframes shine{to{background-position:220% 0;}}
+  /* Logo 圆形光晕 */
+  .logo{display:inline-flex;align-items:center;justify-content:center;width:68px;height:68px;border-radius:50%;
+    background:linear-gradient(135deg,rgba(110,168,255,.28),rgba(180,139,255,.28));
+    border:1px solid rgba(255,255,255,.18);margin-bottom:14px;
+    box-shadow:0 8px 24px rgba(110,168,255,.35);position:relative;z-index:2;}
+  .logo-orb{font-size:34px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+  /* 封面装饰星座图标（角落） */
+  header .deco{position:absolute;font-size:22px;opacity:.35;user-select:none;color:var(--brand2);}
+  header .deco.dl{left:20px;top:18px;animation:tw 5s ease-in-out infinite;}
+  header .deco.dr{right:20px;bottom:16px;font-size:19px;animation:tw 6s ease-in-out infinite reverse;}
+  @keyframes tw{0%,100%{opacity:.2;transform:scale(1) rotate(0);}50%{opacity:.6;transform:scale(1.2) rotate(8deg);}}
+  header h1{font-size:36px;letter-spacing:3px;background:linear-gradient(90deg,#fff,var(--brand),var(--brand2),#fff);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 7s linear infinite;font-weight:800;}
+  header .badge{display:inline-block;margin-top:14px;padding:6px 16px;border-radius:20px;font-size:12px;
+    background:rgba(110,168,255,.14);border:1px solid rgba(110,168,255,.38);color:var(--brand);
+    backdrop-filter:blur(6px);font-weight:600;letter-spacing:.5px;}
+  header .subtitle{color:var(--sub);margin-top:14px;font-size:14px;line-height:1.8;}
+  header .subtitle b{color:var(--txt);font-weight:700;}
+  /* 功能亮点 chips */
+  .features{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .fchip{font-size:11.5px;color:var(--sub);padding:6px 12px;border-radius:20px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);
+    transition:.2s;cursor:default;}
+  .fchip:hover{color:var(--txt);border-color:var(--brand);transform:translateY(-1px);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow);position:relative;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+  .field{flex:1 1 130px;display:flex;flex-direction:column;gap:7px;}
+  .field label{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px;}
+  .field input{background:#10162a;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:13px 14px;font-size:16px;outline:none;transition:.2s;}
+  .field input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(110,168,255,.25);background:#141c34;}
+  .name-field{flex:1 1 220px;}
+  .seg{display:inline-flex;background:#10162a;border:1px solid var(--line);border-radius:10px;padding:2px;}
+  .seg button{flex:1;border:none;background:transparent;color:var(--sub);padding:6px 12px;font-size:12px;border-radius:8px;cursor:pointer;transition:.2s;}
+  .seg button.on{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;font-weight:600;}
+  .btnrow{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;}
+  button.primary{flex:1 1 200px;border:none;cursor:pointer;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(90deg,var(--brand),var(--brand2));padding:15px;border-radius:14px;transition:.2s;box-shadow:0 8px 24px rgba(110,168,255,.38);letter-spacing:1px;}
+  button.primary:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 30px rgba(110,168,255,.48);}
+  button.primary:active{transform:translateY(0);}
+  button.ghost{border:1px solid var(--line);background:transparent;color:var(--sub);padding:14px 18px;border-radius:14px;cursor:pointer;font-size:14px;transition:.2s;}
+  button.ghost:hover{color:var(--txt);border-color:var(--brand);background:rgba(110,168,255,.08);}
+  .hint{font-size:12px;color:var(--sub);margin-top:12px;line-height:1.8;}
+  .privacy-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);
+    background:rgba(63,214,160,.14);border:1px solid rgba(63,214,160,.35);
+    padding:8px 14px;border-radius:12px;white-space:nowrap;}
+  .result{margin-top:24px;display:none;}
+  .result.show{display:block;animation:fade .4s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  .hero{background:linear-gradient(135deg,rgba(110,168,255,.20),rgba(180,139,255,.20));border:1px solid rgba(110,168,255,.30);border-radius:18px;padding:24px;text-align:center;margin-bottom:20px;position:relative;overflow:hidden;}
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(400px 120px at 50% 0%,rgba(255,255,255,.08),transparent 70%);pointer-events:none;}
+  .hero .age{font-size:42px;font-weight:800;background:linear-gradient(90deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:1px;}
+  .hero .sub{color:var(--sub);font-size:14px;margin-top:8px;line-height:1.6;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
+  .item{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:16px;transition:.2s;}
+  .item:hover{border-color:rgba(110,168,255,.4);transform:translateY(-2px);}
+  .item .k{font-size:12px;color:var(--sub);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .item .v{font-size:15px;font-weight:600;line-height:1.45;word-break:break-word;}
+  .item .v small{font-weight:400;font-size:12px;color:var(--sub);display:block;margin-top:3px;}
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+  .tag.ok{background:rgba(63,214,160,.18);color:var(--ok);}
+  .tag.bad{background:rgba(255,107,129,.18);color:var(--bad);}
+  .tag.warn{background:rgba(255,180,84,.18);color:var(--warn);}
+  .tag.info{background:rgba(124,208,255,.18);color:var(--info);}
+  .bday-wish{margin-top:16px;text-align:center;font-size:15px;color:var(--warn);font-weight:600;}
+  .sec-title{font-size:14px;color:var(--brand2);margin:18px 0 10px;font-weight:700;letter-spacing:.5px;}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin-top:26px;line-height:1.6;}
+  .copyright{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--sub);line-height:1.8;}
+  .copyright .copy-title{font-weight:700;color:var(--txt);letter-spacing:.5px;}
+  .copyright .copy-meta{font-size:11px;color:#7d8a9f;}
+  .copyright a.copy-link{color:var(--brand);text-decoration:none;}
+  .copyright a.copy-link:hover{text-decoration:underline;}
+  .err{color:var(--bad);font-size:13px;margin-top:10px;display:none;background:rgba(255,107,129,.1);border:1px solid rgba(255,107,129,.3);padding:10px 12px;border-radius:10px;}
+  .err.show{display:block;}
+  .okbox{color:var(--ok);font-size:13px;margin-top:8px;display:none;}
+  .okbox.show{display:block;}
+  .feat{font-size:11px;color:var(--brand2);margin-top:4px;}
+  /* 五行条 */
+  .wuxing{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .wuxing span{flex:1;min-width:36px;text-align:center;font-size:11px;padding:4px 2px;border-radius:8px;background:#111728;border:1px solid var(--line);color:var(--sub);}
+  .wuxing span.hot{font-weight:700;border-color:var(--brand);color:var(--txt);}
+  .wuxing span.miss{opacity:.35;text-decoration:line-through;}
+  .copybar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center;}
+  .copybar button{flex:1;min-width:140px;}
+  .history{margin-top:18px;}
+  .history ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+  .history li{background:#111728;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .history li b{color:var(--brand);}
+  .history .empty{color:var(--sub);font-size:13px;text-align:center;padding:12px;}
+  .chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:rgba(124,156,255,.15);color:var(--brand);margin-left:6px;}
+
+  /* ===== 隐私授权弹窗 / 数据管理 ===== */
+  .consent-mask{position:fixed;inset:0;z-index:200;background:rgba(6,9,18,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:.3s;}
+  .consent-mask.show{opacity:1;pointer-events:auto;}
+  .consent{width:100%;max-width:440px;background:linear-gradient(160deg,#161c2e,#1c1530);border:1px solid rgba(110,168,255,.35);border-radius:20px;padding:26px 24px;box-shadow:var(--shadow);transform:translateY(16px);transition:.3s;}
+  .consent-mask.show .consent{transform:translateY(0);}
+  .consent h3{font-size:17px;margin-bottom:10px;}
+  .consent p{font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:8px;}
+  .consent .tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;}
+  .consent .tags span{font-size:11px;background:#111728;border:1px solid var(--line);padding:4px 9px;border-radius:8px;color:var(--brand2);}
+  .consent .acts{display:flex;gap:10px;margin-top:16px;}
+  .consent .acts button{flex:1;padding:12px;}
+  .consent .always{font-size:11px;color:var(--sub);margin-top:12px;text-align:center;}
+  .databar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .databar button{flex:1;min-width:130px;font-size:12px;padding:9px;}
+  .privacy-pill{font-size:11px;}
+
+  /* ===== 升级：已活天数 / 距成年 进度条 / 导出 ===== */
+  .lived-bar{height:8px;background:#111728;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:8px;}
+  .lived-bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:8px;transition:width .8s ease;}
+  .progress{display:flex;align-items:center;gap:10px;margin-top:8px;}
+  .progress .track{flex:1;height:8px;background:#111728;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .progress .track>span{display:block;height:100%;background:linear-gradient(90deg,var(--warn),#ff8a5c);border-radius:8px;transition:width .8s ease;}
+  .progress .pct{font-size:11px;color:var(--sub);min-width:42px;text-align:right;}
+  .item .v .sub-line{font-weight:400;font-size:11px;color:var(--sub);display:block;margin-top:3px;}
+  .exportbar{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .exportbar button{flex:1;min-width:150px;}
+  .btn-loader{position:relative;}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--line);color:var(--txt);padding:12px 20px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);opacity:0;transition:.3s;z-index:99;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .item.highlight{border-color:var(--brand);box-shadow:0 0 0 2px rgba(124,156,255,.25);}
+  .kw{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.6;}
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px;}
+  .feat-grid div{background:#111728;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--sub);}
+
+  /* ==================== 响应式布局 ==================== */
+  @media (max-width:820px){
+    .wrap{max-width:100%;}
+    header h1{font-size:30px;letter-spacing:2px;}
+    .hero .age{font-size:34px;}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+    .features{gap:6px;}
+    .fchip{font-size:10.5px;padding:5px 9px;}
+  }
+  @media (max-width:520px){
+    body{padding:16px 12px 30px;}
+    header{padding:30px 16px 22px;border-radius:22px;}
+    header h1{font-size:26px;}
+    .logo{width:56px;height:56px;}
+    .logo-orb{font-size:28px;}
+    .card{padding:18px;}
+    .row{gap:10px;margin-bottom:12px;}
+    .field{flex:1 1 100%;}
+    .name-field{flex:1 1 100%;}
+    .grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .item{padding:12px;}
+    .item .v{font-size:14px;}
+    .hero{padding:18px;}
+    .hero .age{font-size:30px;}
+    .btnrow{flex-direction:column;}
+    button.primary{flex:1 1 auto;}
+    .exportbar,.copybar{flex-direction:column;}
+    .sec-title{font-size:13px;}
+    .features{flex-wrap:wrap;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .orb,.aurora,header h1,header::before,header .deco{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<canvas id="constellation"></canvas>
+<div class="aurora"></div>
+<div class="aurora a2"></div>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div class="wrap">
+  <!-- ============ 封面 Header ============ -->
+  <header>
+    <span class="deco dl">✦</span>
+    <span class="deco dr">✧</span>
+    <span class="logo" aria-hidden="true">
+      <span class="logo-orb">🎂</span>
+    </span>
+    <h1>年龄计算器</h1>
+    <span class="badge">✨ 纯前端 · 单文件 · 可离线 · 遇之出品</span>
+    <p class="subtitle">精准计算 <b>年龄</b> · <b>星座</b> · <b>生肖</b> · <b>农历</b> · <b>八字</b> · <b>五行</b> · <b>生辰石</b><br>支持 春节 / 立春 双分界 · 覆盖 1800–2200</p>
+    <div class="features">
+      <span class="fchip">🎯 精准到天</span>
+      <span class="fchip">🔮 八字五行</span>
+      <span class="fchip">🌙 农历闰月</span>
+      <span class="fchip">📅 下次农历生日</span>
+      <span class="fchip">📄 导出 Word</span>
+    </div>
+  </header>
+  <div class="card">
+    <div class="row">
+      <div class="field name-field"><label for="name">姓名 / 整行粘贴（可选）</label><input id="name" type="text" maxlength="60" placeholder="如：小明，或粘贴 1998-05-20 小明"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="y">出生年</label><input id="y" type="number" placeholder="1998" min="1800" max="2200"></div>
+      <div class="field"><label for="m">月</label><input id="m" type="number" placeholder="5" min="1" max="12"></div>
+      <div class="field"><label for="d">日</label><input id="d" type="number" placeholder="20" min="1" max="31"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="h">出生小时 <span style="color:var(--brand)">（选填 · 留空即跳过，不影响其他计算）</span></label><input id="h" type="number" placeholder="不知道可留空" min="0" max="23"><div class="feat" id="hHint">不填则八字仅显示年/月/日三柱</div></div>
+      <div class="field"><label>生肖/年干支分界
+        <span class="seg" id="segMode" title="春节=民间习俗；立春=传统命理">
+          <button data-m="spring" class="on" onclick="setMode('spring',this)">春节</button>
+          <button data-m="lichun" onclick="setMode('lichun',this)">立春</button>
+        </span>
+      </label><div class="feat" id="modeHint">当前：春节分界（民间习俗，默认）</div></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" onclick="calc()">开始计算</button>
+      <button class="ghost" onclick="resetAll()">清空 / 重置</button>
+    </div>
+    <div class="hint">日期范围 1800–2200（农历引擎已内嵌，无需联网即可离线使用）。支持整行粘贴：<b>1998-05-20</b>、<b>1998/05/20</b>、<b>980520</b> 或 <b>姓名 1998-05-20</b>。出生日期在未来将无法计算年龄。生肖/年干支可在「春节 / 立春」两种分界间切换。</div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="hero">
+      <div class="age" id="rAge"></div>
+      <div class="sub" id="rSummary"></div>
+    </div>
+    <div class="grid" id="rGrid"></div>
+    <div class="bday-wish" id="rWish"></div>
+
+    <div class="sec-title">🔮 八字 · 五行分析</div>
+    <div class="grid" id="rBazi"></div>
+
+    <div class="sec-title">💎 生辰石 · 诞生花 · 幸运色</div>
+    <div class="grid" id="rBirth"></div>
+
+    <div class="copybar">
+      <button class="ghost" onclick="copyResult()">📋 复制结果为文本</button>
+      <span class="privacy-pill" title="隐私保护说明">🛡️ 纯本地计算 · 零留存</span>
+    </div>
+    <div class="exportbar">
+      <button class="primary btn-loader" onclick="exportWord(event)">📄 一键生成 Word 文档</button>
+      <button class="ghost" onclick="window.print()">🖨️ 打印 / 存 PDF</button>
+    </div>
+    <div class="kw">💡 文档为纯前端生成（.docx），无需联网、不上传任何数据；也可「打印」直接存为 PDF。</div>
+  </div>
+
+  <footer>
+    纯前端单文件 · 无需上传任何数据 · 农历/八字引擎内嵌（1800–2200）<br>
+    <div class="copyright">
+      <span class="copy-title">© <span id="copyYear"></span> <span id="copyOwner">遇之</span>. 保留所有权利.</span><br>
+      <span class="copy-meta">版权人：<span id="copyOwner2">遇之</span> ｜ 版本 v4.0 ｜ 本程序仅供娱乐与参考，不构成任何专业建议</span><br>
+      <span class="copy-meta">开源协议：MIT ｜ 项目地址：<a class="copy-link" href="https://yuYU-chen985.github.io/age-calculator/" target="_blank" rel="noopener">yuYU-chen985.github.io/age-calculator</a></span>
+    </div>
+    <div class="kw" id="privacyKw">💡 文档为纯前端生成（.docx），无需联网、不上传任何数据；也可「打印」直接存为 PDF。</div>
+
+    <div class="sec-title">🔐 隐私与访问日志（合规授权）</div>
+    <div class="kw" style="margin-top:0">
+      每次计算会留下<b>设备型号、匿名 IP、省份、访问时间</b>等后台日志，<b>不会记录姓名 / 出生日期 / 八字</b>。
+      数据仅在点击「同意」后上报，可随时查看或删除。
+    </div>
+    <div class="databar">
+      <button class="ghost" onclick="Privacy.viewMine()">📂 查看我的数据</button>
+      <button class="ghost" onclick="Privacy.deleteMine()">🗑️ 删除我的数据</button>
+      <button class="ghost" onclick="Privacy.exportAll()">⬇️ 导出全部日志</button>
+    </div>
+  </div>
+
+  <footer>
+    纯前端单文件 · 无需上传任何数据 · 农历/八字引擎内嵌（1800–2200）<br>
+    <div class="copyright">
+      <span class="copy-title">© <span id="copyYear"></span> <span id="copyOwner">遇之</span>. 保留所有权利.</span><br>
+      <span class="copy-meta">版权人：<span id="copyOwner2">遇之</span> ｜ 版本 v5.0 ｜ 本程序仅供娱乐与参考，不构成任何专业建议</span><br>
+      <span class="copy-meta">开源协议：MIT ｜ 项目地址：<a class="copy-link" href="https://yuYU-chen985.github.io/age-calculator/" target="_blank" rel="noopener">yuYU-chen985.github.io/age-calculator</a></span>
+    </div>
+  </footer>
+</div>
+
+<!-- 隐私授权弹窗 -->
+<div class="consent-mask" id="consentMask" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+  <div class="consent">
+    <h3 id="consentTitle">🛡️ 是否同意记录访问日志？</h3>
+    <p>为改进体验，本工具会记录<b>匿名访问信息</b>。请确认：</p>
+    <div class="tags">
+      <span>📱 设备型号</span>
+      <span>🌐 IP 地址（末段匿名化）</span>
+      <span>🗺️ 省份</span>
+      <span>🕐 访问时间</span>
+    </div>
+    <p style="color:var(--ok)">✅ 绝不记录：姓名、出生日期、八字等敏感数据。</p>
+    <p style="color:var(--warn)">ℹ️ 拒绝授权：所有功能仍可正常使用，仅不上传日志。</p>
+    <div class="acts">
+      <button class="primary" onclick="Privacy.accept()">同意并继续</button>
+      <button class="ghost" onclick="Privacy.reject()">拒绝</button>
+    </div>
+    <div class="always">已做出的选择会保存在本设备，可随时在下方「查看 / 删除」中撤销。</div>
+  </div>
+</div>
+<script>
+/* ========== 版权信息配置（改成你的昵称/名字即可，页面署名同步更新）========== */
+var COPYRIGHT_OWNER='遇之';
+(function(){var y=new Date().getFullYear();var yr=document.getElementById('copyYear');if(yr)yr.textContent=y;var o1=document.getElementById('copyOwner');if(o1)o1.textContent=COPYRIGHT_OWNER;var o2=document.getElementById('copyOwner2');if(o2)o2.textContent=COPYRIGHT_OWNER;})();
+
+/* ========== 后台日志：API 地址配置（部署时改成你的后端地址）========== */
+var API_BASE=(function(){
+  // 同域部署（node server.js 直接托管前端）用相对路径即可；
+  // 若前后端分离，改为完整地址，如 https://your-domain.com
+  return window.location.protocol.indexOf('file')>=0 ? 'http://localhost:3000' : '';
+})();
+
+/* ========== 隐私授权 + 埋点上报（合规版）==========
+ * 设计原则：
+ *  - 默认不上报；只有用户「同意」后才发送
+ *  - 上报字段仅含：设备型号/匿名IP(后端归零)/省份(后端解析)/访问时间
+ *  - payload 经白名单过滤，绝不含 姓名/生日/八字
+ *  - 授权状态存 localStorage，支持撤销（删除数据）
+ */
+var Privacy=(function(){
+  var KEY='agecalc_consent';
+  var CONSENT_COOKIE_DAYS=365;
+
+  function getConsent(){try{return localStorage.getItem(KEY);}catch(e){return null;}}
+  function setConsent(v){try{localStorage.setItem(KEY,v);}catch(e){}}
+
+  function showMask(){var m=document.getElementById('consentMask');if(m)m.classList.add('show');}
+  function hideMask(){var m=document.getElementById('consentMask');if(m)m.classList.remove('show');}
+
+  /* 首次计算前检查授权 */
+  function ensureConsent(){
+    var c=getConsent();
+    if(c==='accept')return Promise.resolve(true);
+    if(c==='reject')return Promise.resolve(false);
+    return new Promise(function(resolve){
+      showMask();
+      window.__privacyResolve=resolve;
+    });
+  }
+  function accept(){setConsent('accept');hideMask();report('consent_accept',{});if(window.__privacyResolve){window.__privacyResolve(true);window.__privacyResolve=null;}}
+  function reject(){setConsent('reject');hideMask();report('consent_reject',{});if(window.__privacyResolve){window.__privacyResolve(false);window.__privacyResolve=null;}}
+
+  /* 上报（仅在已授权时真正发送） */
+  function report(event,payload){
+    if(getConsent()!=='accept')return;
+    var url=API_BASE+'/api/log';
+    var body=JSON.stringify({event:event,consent:true,payload:payload||{}});
+    if(navigator.sendBeacon){try{navigator.sendBeacon(url,new Blob([body],{'type':'application/json'}));return;}catch(e){}}
+    // 降级：fetch（fire-and-forget，不阻塞交互）
+    try{fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:body,keepalive:true});}catch(e){}
+  }
+
+  /* 记录一次「计算」事件（由 calc() 在成功末尾调用） */
+  function trackCalculate(startMs){
+    report('calculate',{
+      duration_ms:startMs?Date.now()-startMs:0,
+      has_name:!!(document.getElementById('name').value||'').trim(),
+      result_status:'success'
+    });
+  }
+
+  /* 页面访问：延迟上报（首屏不抢资源） */
+  function trackVisit(){
+    if(getConsent()!=='accept')return;
+    setTimeout(function(){report('visit',{source:'page_load'});},800);
+  }
+
+  /* ---------- 用户数据管理（查看 / 删除 / 导出）---------- */
+  function api(path,method,body){
+    var opts={method:method,headers:{'content-type':'application/json'}};
+    if(body)opts.body=JSON.stringify(body);
+    return fetch(API_BASE+path,opts).then(function(r){return r.json();}).catch(function(){return {ok:false,offline:true};});
+  }
+  function flashMsg(msg){if(window.flash)flash(msg);else alert(msg);}
+  function viewMine(){
+    api('/api/my-logs','GET').then(function(d){
+      if(d.offline)return flashMsg('⚠️ 未连接到日志服务（请先启动后端）');
+      if(!d.records||!d.records.length)return flashMsg('📭 暂无你的访问记录');
+      var txt=d.records.map(function(r,i){
+        return (i+1)+'. ['+r.ts+'] '+r.event+' · '+r.device+' · '+r.ip+' · '+r.province;
+      }).join('\n');
+      alert('📂 我的访问记录（共 '+d.count+' 条）\n\n'+txt);
+    });
+  }
+  function deleteMine(){
+    if(!confirm('确认删除你的全部访问日志？此操作不可恢复。'))return;
+    api('/api/my-logs','DELETE').then(function(d){
+      flashMsg(d.offline?'⚠️ 未连接日志服务':'🗑️ 已删除你的访问日志');
+    });
+  }
+  function exportAll(){window.open(API_BASE+'/api/export','_blank');}
+
+  /* 首次访问：若未做过选择则弹窗；否则静默上报访问 */
+  function init(){
+    var c=getConsent();
+    if(c===null){showMask();}
+    else{trackVisit();}
+  }
+
+  return {ensureConsent:ensureConsent,accept:accept,reject:reject,report:report,
+          trackCalculate:trackCalculate,trackVisit:trackVisit,init:init,
+          viewMine:viewMine,deleteMine:deleteMine,exportAll:exportAll};
+})();
+
+/* 页面加载后启动隐私流程（兼容非浏览器环境：缺 addEventListener 时静默跳过） */
+if(window.addEventListener){window.addEventListener('DOMContentLoaded',function(){if(Privacy&&Privacy.init)Privacy.init();});}
+/* ========== 出生小时：明确的"可跳过"交互提示 ========== */
+(function(){
+  var hi=document.getElementById('h'),hh=document.getElementById('hHint');if(!hi||!hh)return;
+  function sync(){var v=hi.value.trim();hh.textContent=v===''?'不填则八字仅显示年/月/日三柱':'已填写，将用于推算八字「时柱」';}
+  hi.addEventListener('input',sync);sync();
+})();
+/* ========== 模式（春节/立春）========== */
+var MODE='spring';
+function setMode(m,btn){MODE=m;document.querySelectorAll('#segMode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);});document.getElementById('modeHint').textContent=m==='lichun'?'当前：立春分界（传统命理）':'当前：春节分界（民间习俗，默认）';}
+
+/* =================== 文化数据表（生辰石/诞生花/幸运色/生肖emoji/五行）=================== */
+var BIRTH_STONE={1:['石榴石','忠诚与真实'],2:['紫水晶','平和与智慧'],3:['海蓝宝石','勇敢与沉着'],4:['钻石','永恒与坚贞'],5:['祖母绿','爱与生命'],6:['珍珠','纯洁与健康'],7:['红宝石','热情与成功'],8:['橄榄石','幸福与和谐'],9:['蓝宝石','真诚与智慧'],10:['欧泊','希望与灵感'],11:['托帕石','友谊与喜悦'],12:['绿松石','好运与庇护']};
+var BIRTH_FLOWER={1:['梅花','坚强、高雅'],2:['水仙','思念、吉祥'],3:['桃花','爱情、希望'],4:['牡丹','富贵、圆满'],5:['石榴花','繁荣、成熟'],6:['荷花','清白、纯洁'],7:['兰花','高洁、典雅'],8:['桂花','收获、吉祥'],9:['菊花','长寿、隐逸'],10:['芙蓉','纤细、脱俗'],11:['山茶花','谦逊、可爱'],12:['腊梅','坚毅、高洁']};
+var LUCKY_COLOR={1:'红、黄',2:'紫、白',3:'浅蓝、粉',4:'青、银',5:'翠绿、白',6:'米白、金',7:'绿、红',8:'橄榄绿、金',9:'蓝、金',10:'橙、彩',11:'蓝、粉',12:'蓝绿、黄'};
+var SX_EMOJI={'鼠':'🐭','牛':'🐂','虎':'🐯','兔':'🐰','龙':'🐲','蛇':'🐍','马':'🐴','羊':'🐏','猴':'🐵','鸡':'🐔','狗':'🐶','猪':'🐷'};
+/* 天干地支 -> 五行 */
+var GAN_WX={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+var ZHI_WX={'子':'水','丑':'土','寅':'木','卯':'木','辰':'土','巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'};
+var WX_ORDER=['金','木','水','火','土'];
+var WX_COLOR={'金':'#e8c16a','木':'#5fd07a','水':'#5fb0e8','火':'#e8664f','土':'#c98ad6'};
+/* 干支 -> 纳音（简化：按干支序数映射，覆盖常见四柱） */
+var NA_YIN={甲子:'海中金',乙丑:'海中金',丙寅:'炉中火',丁卯:'炉中火',戊辰:'大林木',己巳:'大林木',庚午:'路旁土',辛未:'路旁土',壬申:'剑锋金',癸酉:'剑锋金',甲戌:'山头火',乙亥:'山头火',丙子:'涧下水',丁丑:'涧下水',戊寅:'城头土',己卯:'城头土',庚辰:'白蜡金',辛巳:'白蜡金',壬午:'杨柳木',癸未:'杨柳木',甲申:'泉中水',乙酉:'泉中水',丙戌:'屋上土',丁亥:'屋上土',戊子:'霹雳火',己丑:'霹雳火',庚寅:'松柏木',辛卯:'松柏木',壬辰:'长流水',癸巳:'长流水',甲午:'沙中金',乙未:'沙中金',丙申:'山下火',丁酉:'山下火',戊戌:'平地木',己亥:'平地木',庚子:'壁上土',辛丑:'壁上土',壬寅:'金箔金',癸卯:'金箔金',甲辰:'覆灯火',乙巳:'覆灯火',丙午:'天河水',丁未:'天河水',戊申:'大驿土',己酉:'大驿土',庚戌:'钗钏金',辛亥:'钗钏金',壬子:'桑柘木',癸丑:'桑柘木',甲寅:'大溪水',乙卯:'大溪水',丙辰:'沙中土',丁巳:'沙中土',戊午:'天上火',己未:'天上火',庚申:'石榴木',辛酉:'石榴木',壬戌:'大海水',癸亥:'大海水'};
+
+/* ========== 自实现：年龄/星座/生肖(公历)/成年/生日倒计时 ========== */
+function isLeap(y){return (y%4===0&&y%100!==0)||(y%400===0);}
+function daysInMonth(y,m){return [31,(isLeap(y)?29:28),31,30,31,30,31,31,30,31,30,31][m-1];}
+function validDate(y,m,d){return y>=1800&&y<=2200&&m>=1&&m<=12&&d>=1&&d<=daysInMonth(y,m);}
+/* 安全的"当月该生日"：2-29 在非闰年回落到 2-28，避免 Date 溢出 */
+function safeBirthday(year,month,day){var d=day;if(month===2&&d===29&&!isLeap(year))d=28;return {y:year,m:month,d:d};}
+function ageDetail(by,bm,bd){
+  var today=new Date(),ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+  if(by>ty||(by===ty&&bm>tm)||(by===ty&&bm===tm&&bd>td))return null;
+  var years=ty-by,months=tm-bm,days=td-bd;
+  if(days<0){months--;var prevM=(bm===1?12:bm-1),prevY=(bm===1?by-1:by);days+=daysInMonth(prevY,prevM);}
+  if(months<0){years--;months+=12;}
+  return {years:years,months:months,days:days};
+}
+/* 下次生日：2-29 生日在非闰年安全回落到 2-28 */
+function nextBirthday(by,bm,bd){
+  var today=new Date(),ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+  var thisY=ty;if(bm<tm||(bm===tm&&bd<td))thisY=ty+1;
+  var sb=safeBirthday(thisY,bm,bd);
+  var d0=new Date(Date.UTC(1900,0,1)),d1=new Date(Date.UTC(sb.y,sb.m-1,sb.d));
+  var abs=Math.round((d1-d0)/86400000),now=new Date(Date.UTC(ty,tm-1,td)),absNow=Math.round((now-d0)/86400000);
+  var diff=abs-absNow;
+  /* 若算出已过（含溢出修正），取明年 */
+  if(diff<0){var sb2=safeBirthday(thisY+1,bm,bd);var d2=new Date(Date.UTC(sb2.y,sb2.m-1,sb2.d));diff=Math.round((d2-d0)/86400000)-absNow;}
+  return {diff:diff,isToday:(thisY===ty&&bm===tm&&bd===td),thisY:thisY,month:bm,day:bd};
+}
+function isAdult(by,bm,bd){
+  var today=new Date(),ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+  var e18y=by+18,e18m=bm,e18d=bd;if(e18d>daysInMonth(e18y,e18m))e18d=daysInMonth(e18y,e18m);
+  return (e18y<ty||(e18y===ty&&e18m<tm)||(e18y===ty&&e18m===tm&&e18d<=td));
+}
+/* 距成年还有多久（未成年时） */
+function daysToAdult(by,bm,bd){
+  var today=new Date(),ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+  var e18y=by+18,e18m=bm,e18d=bd;if(e18d>daysInMonth(e18y,e18m))e18d=daysInMonth(e18y,e18m);
+  var d0=new Date(Date.UTC(1900,0,1)),target=new Date(Date.UTC(e18y,e18m-1,e18d));
+  var absT=Math.round((target-d0)/86400000),now=new Date(Date.UTC(ty,tm-1,td)),absNow=Math.round((now-d0)/86400000);
+  var diff=absT-absNow;
+  /* 满 18 当天视为 0（今天恰好满18 的边界，isAdult 已=true，此处不再调用） */
+  return diff>0?diff:0;
+}
+/* 季节（公历） */
+/* 四季（按节气：立春/立夏/立秋/立冬精确分界，2月精确闰年不影响节气日期） */
+var SEASON_JIE=[['立春',2,4],['立夏',5,6],['立秋',8,8],['立冬',11,8]];
+function season(y,m,d){
+  var n=(m<10?1:0)*100+m; /* MMDD */
+  var seed=(y-1)*0+n; /* 借用：直接用月比较节气日更直观 */
+  var day=m*100+d;
+  if((m===2&&d>=4)||m>2&&m<5||(m===5&&d<6))return '春季';
+  if((m===5&&d>=6)||m>5&&m<8||(m===8&&d<8))return '夏季';
+  if((m===8&&d>=8)||m>8&&m<11||(m===11&&d<8))return '秋季';
+  return '冬季';
+}
+var SEASON_EMOJI={'春季':'🌸','夏季':'☀️','秋季':'🍂','冬季':'❄️'};
+var ZODIAC=[[1,20,'水瓶座'],[2,19,'双鱼座'],[3,21,'白羊座'],[4,20,'金牛座'],[5,21,'双子座'],[6,22,'巨蟹座'],[7,23,'狮子座'],[8,23,'处女座'],[9,23,'天秤座'],[10,24,'天蝎座'],[11,23,'射手座'],[12,22,'摩羯座']];
+function zodiac(y,m,d){for(var i=ZODIAC.length-1;i>=0;i--){if(m>ZODIAC[i][0]||(m===ZODIAC[i][0]&&d>=ZODIAC[i][1]))return ZODIAC[i][2];}return '摩羯座';}
+var ZODIAC_EMOJI={'白羊座':'♈','金牛座':'♉','双子座':'♊','巨蟹座':'♋','狮子座':'♌','处女座':'♍','天秤座':'♎','天蝎座':'♏','射手座':'♐','摩羯座':'♑','水瓶座':'♒','双鱼座':'♓'};
+var WEEK=['日','一','二','三','四','五','六'];
+var GAN=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'],ZHI=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+
+/* ========== 整行粘贴解析：1998-05-20 / 1998/05/20 / 980520 / 姓名 1998-05-20 ========== */
+function tryParsePasted(str){
+  str=(str||'').trim();if(!str)return null;
+  /* 优先提取 YYYY-MM-DD 或 YYYY/MM/DD */
+  var m1=str.match(/(\d{4})[\-\/\.](\d{1,2})[\-\/\.](\d{1,2})/);
+  if(m1){return {y:+m1[1],m:+m1[2],d:+m1[3]};}
+  /* 纯 8 位数字 YYYYMMDD 或 YYMMDD */
+  var m2=str.match(/^(\d{8})$/);
+  if(m2){var s=m2[1];return {y:+s.slice(0,4),m:+s.slice(4,6),d:+s.slice(6,8)};}
+  var m3=str.match(/^(\d{6})$/);
+  if(m3){var s=m3[1];var yy=+s.slice(0,2);return {y:(yy>=50?1900:2000)+yy,m:+s.slice(2,4),d:+s.slice(4,6)};}
+  return null;
+}
+(function(){
+  var nm=document.getElementById('name');if(!nm)return;
+  nm.addEventListener('blur',function(){
+    var p=tryParsePasted(nm.value);
+    if(p&&validDate(p.y,p.m,p.d)){
+      document.getElementById('y').value=p.y;
+      document.getElementById('m').value=p.m;
+      document.getElementById('d').value=p.d;
+      /* 若粘贴内容含姓名（非纯日期），保留姓名部分：简单做法——只保留非数字汉字名 */
+      var nameOnly=nm.value.replace(/[\d\-\/\.\s]+/g,'').slice(0,20);
+      if(nameOnly)nm.value=nameOnly;
+    }
+  });
+})();
+
+/* ========== 主计算 ========== */
+function calc(){
+  window.__calcStart=Date.now();
+  /* 首次计算前：若未授权则先弹窗，用户选择后再执行（拒绝也不阻断计算） */
+  if(window.Privacy && Privacy.ensureConsent){var p=Privacy.ensureConsent();if(p&&p.then){p.then(function(){calc();});return;}}
+  var err=document.getElementById('err');
+  var y=parseInt(document.getElementById('y').value,10),m=parseInt(document.getElementById('m').value,10),d=parseInt(document.getElementById('d').value,10);
+  var name=(document.getElementById('name').value||'').trim().slice(0,20).replace(/[<>&]/g,''),hh=document.getElementById('h').value;
+  if(!y||!m||!d){showErr('请输入完整的出生年/月/日（也可在姓名框整行粘贴，如 1998-05-20）');return;}
+  if(!validDate(y,m,d)){showErr('日期不合法或超出支持范围(1800-2200)');return;}
+  var hhNum=null;if(hh!==''){hhNum=parseInt(hh,10);if(isNaN(hhNum)||hhNum<0||hhNum>23){showErr('出生小时请输入 0-23 之间的整数');return;}}
+  var today=new Date(),ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+  if(y>ty||(y===ty&&m>tm)||(y===ty&&m===tm&&d>td)){showErr('出生日期在未来，无法计算年龄');return;}
+  var age=ageDetail(y,m,d),nx=nextBirthday(y,m,d);
+  var sx=LunarEngine.shengxiao(y,m,d),zod=zodiac(y,m,d),adult=isAdult(y,m,d);
+  var adultExact18=(age&&age.years===18&&age.months===0&&age.days===0);
+  var xu=LunarEngine.xuAge(y,m,d);
+  var lc=LunarEngine.lunarChinese(y,m,d);
+  var bz=LunarEngine.baZi(y,m,d,hhNum,MODE);
+  var nlb=null;if(lc){var sl=LunarEngine.solarToLunar(y,m,d);if(sl){var c1=LunarEngine.lunarToSolar(ty,sl.month,sl.day,sl.isLeap);if(!c1||(c1.y<ty||(c1.y===ty&&(c1.m<tm||(c1.m===tm&&c1.d<td))))){c1=LunarEngine.lunarToSolar(ty+1,sl.month,sl.day,sl.isLeap);}if(c1)nlb={y:c1.y,m:c1.m,d:c1.d};}}
+
+  /* 已活天数 */
+  var d0=new Date(Date.UTC(1900,0,1));
+  var birthAbs=Math.round((new Date(Date.UTC(y,m-1,d))-d0)/86400000);
+  var nowAbs=Math.round((new Date(Date.UTC(ty,tm-1,td))-d0)/86400000);
+  var livedDays=nowAbs-birthAbs;
+
+  document.getElementById('rAge').textContent=age?(age.years+' 周岁 '+age.months+' 个月 '+age.days+' 天'):'尚未满 1 周岁';
+  document.getElementById('rSummary').textContent=(name?name+' · ':'')+'出生 '+y+'年'+m+'月'+d+'日 ｜ 虚岁 '+(xu||'—')+'（'+(MODE==='lichun'?'立春':'春节')+'分界）';
+  var grid=document.getElementById('rGrid');grid.innerHTML='';
+  var items=[
+    ['星座',(ZODIAC_EMOJI[zod]||'')+' '+zod],
+    ['生肖',(SX_EMOJI[sx]||'')+' '+sx+'（'+LunarEngine.yearGanZhi(y,m,d,MODE)+'年）'],
+    ['下一个公历生日',nx.isToday?'🎉 就是今天！':(nx.diff+' 天后（'+nx.thisY+'年'+nx.month+'月'+nx.day+'日）')],
+    ['出生季节',(SEASON_EMOJI[season(y,m,d)]||'')+' '+season(y,m,d)],
+    ['📅 已活天数',fmtLived(livedDays)+'<span class="sub-line">≈ '+livedApprox(livedDays)+'</span>',0,{html:true}],
+    ['出生日星期','星期'+WEEK[new Date(y,m-1,d).getDay()]],
+    ['今日星期','星期'+WEEK[today.getDay()]]
+  ];
+  if(!adult){
+    var ad=LunarEngine.adultBreakdown(y,m,d),ap=LunarEngine.adultProgress(y,m,d);
+    items.push(['⏳ 距成年(18周岁)','约 '+ad.years+' 年 '+ad.months+' 个月 '+ad.daysRem+' 天<span class="sub-line">共 '+ad.days.toLocaleString()+' 天</span>',0,{html:true}]);
+    items.push(['成年进度','<div class="progress"><div class="track"><span style="width:'+ap.toFixed(1)+'%"></span></div><span class="pct">'+ap.toFixed(1)+'%</span></div>',0,{html:true}]);
+  }
+  if(lc)items.push(['农历生日',lc.full+'（'+LunarEngine.yearGanZhi(y,m,d,MODE)+'年 '+sx+'年）']);
+  if(nlb){
+    /* 补充「距今 X 天」+ 星期几，避免只显示一个公历日期让用户难以判断准确性 */
+    var nlbDate=new Date(nlb.y,nlb.m-1,nlb.d);var nlbDiff=Math.round((nlbDate-today)/86400000);
+    items.push(['下次农历生日','公历 '+nlb.y+'年'+nlb.m+'月'+nlb.d+'日<span class="sub-line">距今 '+nlbDiff+' 天 · 星期'+WEEK[nlbDate.getDay()]+'</span>',0,{html:true}]);
+  }
+  /* 万日/千日纪念 */
+  var milestones=[{n:1000,名:'千日'}, {n:10000,名:'万日'}];
+  for(var mi=0;mi<milestones.length;mi++){var ms=milestones[mi];var remain=ms.n-livedDays;var targetD=new Date(Date.UTC(1900,0,1));targetD.setUTCDate(targetD.getUTCDate()+birthAbs+ms.n);var tg={y:targetD.getUTCFullYear(),m:targetD.getUTCMonth()+1,d:targetD.getUTCDate()};items.push([(livedDays>=ms.n?'✅ 已过'+ms.名:(ms.名+'纪念')),(livedDays>=ms.n)?(ms.名+'已于 '+tg.y+'年'+tg.m+'月'+tg.d+'日 度过'):('还剩 '+remain.toLocaleString()+' 天 · '+tg.y+'年'+tg.m+'月'+tg.d+'日'),'info']);}
+  var ez='—';if(bz){ez=bz.year+'年 '+bz.month+'月 '+bz.day+'日'+(bz.time?' '+bz.time+'时':'（时柱已跳过）');}
+  items.push(['八字'+(hhNum===null?'（年/月/日三柱）':'（四柱）'),ez]);
+  items.push(['虚岁算法','严格农历新年'+(MODE==='lichun'?'/立春':''),'info']);
+  /* 成年检测：值 + 状态标签 同行渲染（独立结构，避免 tag/value 互斥导致值被吞） */
+  var adultTag=adult?(adultExact18?'<span class="tag ok">🔞 已成年（今天满18）</span>':'<span class="tag ok">🔞 已成年</span>'):'<span class="tag bad">🔔 未成年</span>';
+  var adultItem=document.createElement('div');adultItem.className='item';
+  adultItem.innerHTML='<div class="k">成年检测</div><div class="v">'+adultTag+'</div>';
+  grid.appendChild(adultItem);
+  /* 渲染其余条目；opts.html=true 表示值含 HTML（进度条/span），用 innerHTML 渲染，
+     否则默认 textContent（安全防 XSS）。这修复了「<div class="progress"> 代码泄漏」问题。 */
+  for(var i=0;i<items.length;i++){var it=items[i];var div=document.createElement('div');div.className='item';var vEl=document.createElement('div');vEl.className='v';if(it[3]&&it[3].html){vEl.innerHTML=it[1];}else{vEl.textContent=it[1];}div.innerHTML='<div class="k">'+it[0]+'</div>';div.appendChild(vEl);if(it[2]==='info')div.querySelector('.v').classList.add('info-txt');grid.appendChild(div);}
+  document.getElementById('rWish').textContent=nx.isToday?'🎂 生日快乐！🎉 祝你心想事成！':(adultExact18?'🎉 今天恰好满 18 周岁！':'');
+  document.getElementById('result').classList.add('show');
+
+  /* ===== 八字五行分析 ===== */
+  renderBazi(bz,y,m,d);
+  /* ===== 生辰石 / 诞生花 / 幸运色 ===== */
+  renderBirthCulture(m);
+  window.__lastResult={name:name,y:y,m:m,d:d,hh:hhNum,age:age,xu:xu,sx:sx,zod:zod,adult:adult,livedDays:livedDays,nx:nx,lc:lc?lc.full:'',nlb:nlb,bz:bz?{year:bz.year,month:bz.month,day:bz.day,time:bz.time}:null};
+
+  /* ===== 后台日志：上报「计算」事件（仅授权后；不含姓名/生日/八字）===== */
+  Privacy.trackCalculate(window.__calcStart);
+}
+
+/* 渲染八字 + 五行统计 + 纳音 + 缺补 */
+function renderBazi(bz,y,m,d){
+  var box=document.getElementById('rBazi');box.innerHTML='';
+  if(!bz){box.innerHTML='<div class="item"><div class="k">八字</div><div class="v">引擎不可用</div></div>';return;}
+  var cols=[['年柱',bz.year],['月柱',bz.month],['日柱',bz.day],['时柱',bz.time||'—']];
+  for(var i=0;i<cols.length;i++){var c=cols[i];box.appendChild(itemEl(c[0],c[1]||'—',c[1]?'<small>'+((NA_YIN[c[1]]||'')?'纳音：'+NA_YIN[c[1]]:'')+'</small>':''));}
+  /* 五行统计：遍历四柱每字 */
+  var count={金:0,木:0,水:0,火:0,土:0};
+  var allGZ=[bz.year,bz.month,bz.day,bz.time].filter(Boolean).join('');
+  for(var j=0;j<allGZ.length;j++){var ch=allGZ[j];var w=GAN_WX[ch]||ZHI_WX[ch];if(w)count[w]++;}
+  var miss=WX_ORDER.filter(function(w){return count[w]===0;});
+  var hot=WX_ORDER.filter(function(w){return count[w]>=3;});
+  var statHtml='';
+  for(var k=0;k<WX_ORDER.length;k++){var w=WX_ORDER[k];statHtml+='<span class="'+(hot.indexOf(w)>=0?'hot':'')+' '+(count[w]===0?'miss':'')+'" style="'+(count[w]>0?'border-color:'+WX_COLOR[w]:'')+'">'+w+' '+count[w]+'</span>';}
+  var div=document.createElement('div');div.className='item';div.style.gridColumn='1 / -1';
+  div.innerHTML='<div class="k">五行统计（点击强度 · 删除线=缺失）</div><div class="v">'+statHtml+'<small style="margin-top:6px;">'+
+    (miss.length?'⚠️ 五行缺：<b style="color:var(--warn)">'+miss.join('、')+'</b>　':'✅ 五行齐全　')+
+    (hot.length?'🔥 偏旺：'+hot.join('、'):'')+
+    '</small></div>';
+  box.appendChild(div);
+}
+function itemEl(k,v,extra){var d=document.createElement('div');d.className='item';d.innerHTML='<div class="k">'+k+'</div><div class="v">'+v+(extra||'')+'</div>';return d;}
+
+/* 生辰石 / 诞生花 / 幸运色 */
+function renderBirthCulture(month){
+  var box=document.getElementById('rBirth');box.innerHTML='';
+  var st=BIRTH_STONE[month],fl=BIRTH_FLOWER[month],lc=LUCKY_COLOR[month];
+  box.appendChild(itemEl('🎁 生辰石（'+month+'月）',st[0],'<small>'+st[1]+'</small>'));
+  box.appendChild(itemEl('🌷 诞生花（'+month+'月）',fl[0],'<small>'+fl[1]+'</small>'));
+  box.appendChild(itemEl('🎨 幸运色',lc));
+}
+
+/* 复制结果为文本 */
+function copyResult(){
+  var r=window.__lastResult;if(!r){showErr('请先点击「开始计算」');return;}
+  var lines=[];
+  lines.push((r.name?r.name+' · ':'')+'年龄报告');
+  lines.push('出生：'+r.y+'年'+r.m+'月'+r.d+'日');
+  if(r.age)lines.push('年龄：'+r.age.years+'周岁'+r.age.months+'个月'+r.age.days+'天');
+  lines.push('星座：'+r.zod+' ｜ 生肖：'+r.sx+' ｜ '+(r.adult?'已成年':'未成年'));
+  lines.push('已活：'+r.livedDays.toLocaleString()+' 天');
+  if(r.lc)lines.push('农历：'+r.lc);
+  var text=lines.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){flash('已复制到剪贴板 📋');},function(){flash('复制失败，可手动选择文本');});}
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');flash('已复制到剪贴板 📋');}catch(e){flash('复制失败');}document.body.removeChild(ta);}
+}
+function flash(msg){var o=document.getElementById('err');o.textContent=msg;o.style.color='var(--ok)';o.style.background='rgba(63,214,160,.1)';o.style.borderColor='rgba(63,214,160,.3)';o.classList.add('show');setTimeout(function(){o.classList.remove('show');o.style='';},2200);
+  /* 同时弹出底部 toast（无障碍友好） */
+  var t=document.getElementById('toast');if(t){t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove('show');},2600);}
+}
+function showErr(s){var e=document.getElementById('err');e.textContent=s;e.classList.add('show');}
+
+/* ===== 隐私说明：纯内存计算，零留存（无 localStorage / 无 Cookie / 无上报）=====
+ * 设计原则：
+ * ① 计算结果仅存于当前页面的 JS 内存（window.__lastResult），关闭/刷新标签即销毁；
+ * ② 不读取、不写入 localStorage / sessionStorage / Cookie；
+ * ③ 无任何网络请求（无 fetch / XHR / sendBeacon / 统计 SDK），全程离线；
+ * ④ 页面启动时主动清除可能由旧版本残留的本地记录，避免历史数据遗留。
+ */
+(function(){
+  try{ localStorage.removeItem('ageCalcHistory'); }catch(e){}   /* 清理旧版遗留数据 */
+  try{ sessionStorage.removeItem('ageCalcHistory'); }catch(e){}
+})();
+function saveHistory(){flash('隐私模式：结果仅在当前页面显示，关闭即清空，无需保存 🛡️');}
+
+
+
+/* ========== 升级辅助：已活天数格式化 ========== */
+function fmtLived(days){return (days>=0?days:0).toLocaleString()+' 天';}
+function livedApprox(days){var y=Math.floor(days/365.25),rem=days-Math.floor(y*365.25),mo=Math.floor(rem/30.44),dd=Math.floor(rem-mo*30.44);var p=[];if(y>=1)p.push(y+' 年');if(mo>=1||y>=1)p.push(mo+' 个月');p.push(dd+' 天');return p.join(' ');}
+
+/* ========== 一键生成 Word 文档（纯前端 Blob，无需后端/联网）========== */
+function buildReportHTML(r){
+  var fmt=function(n){return n<10?'0'+n:n;};
+  var now=new Date();var today=fmt(now.getFullYear())+'-'+fmt(now.getMonth()+1)+'-'+fmt(now.getDate());
+  var A=[];
+  A.push('<!DOCTYPE html>');
+  A.push('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">');
+  A.push('<head><meta charset="utf-8"><meta name="ProgId" content="Word.Document"><title>年龄报告</title>');
+  A.push('<style>body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#222;line-height:1.7;}');
+  A.push('h1{color:#4a6cf7;border-bottom:3px solid #4a6cf7;padding-bottom:8px;}');
+  A.push('.box{border:1px solid #ddd;border-radius:8px;padding:14px 18px;margin:12px 0;background:#fafbff;}');
+  A.push('.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;}');
+  A.push('.row:last-child{border-bottom:none;}.k{color:#666;}.v{font-weight:600;}');
+  A.push('.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:#e8f0ff;color:#4a6cf7;}');
+  A.push('.foot{margin-top:24px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px;}');
+  A.push('</style></head><body>');
+  A.push('<h1>🎂 '+escHtml(r.name||'匿名')+' · 年龄报告</h1>');
+  A.push('<p class="badge">生成于 '+today+' ｜ 纯前端计算 · 单文件</p>');
+  A.push('<div class="box"><div class="row"><span class="k">出生日期</span><span class="v">'+r.y+' 年 '+r.m+' 月 '+r.d+' 日</span></div>');
+  if(r.age)A.push('<div class="row"><span class="k">精确年龄</span><span class="v">'+r.age.years+' 周岁 '+r.age.months+' 个月 '+r.age.days+' 天</span></div>');
+  A.push('<div class="row"><span class="k">虚岁</span><span class="v">'+(r.xu||'—')+'</span></div>');
+  A.push('<div class="row"><span class="k">星座</span><span class="v">'+(r.zod||'')+'</span></div>');
+  A.push('<div class="row"><span class="k">生肖</span><span class="v">'+(r.sx||'')+'</span></div>');
+  A.push('<div class="row"><span class="k">成年状态</span><span class="v">'+(r.adult?'🔞 已成年':'🔔 未成年')+'</span></div>');
+  A.push('<div class="row"><span class="k">📅 已活天数</span><span class="v">'+r.livedDays.toLocaleString()+' 天</span></div>');
+  if(r.lc)A.push('<div class="row"><span class="k">农历生日</span><span class="v">'+escHtml(r.lc)+'</span></div>');
+  if(r.nlb)A.push('<div class="row"><span class="k">下次农历生日(公历)</span><span class="v">'+r.nlb.y+'/'+r.nlb.m+'/'+r.nlb.d+'</span></div>');
+  A.push('</div>');
+  if(r.bz){
+    A.push('<div class="box"><h3>🔮 八字 · 五行</h3>');
+    A.push('<div class="row"><span class="k">年柱</span><span class="v">'+r.bz.year+'</span></div>');
+    A.push('<div class="row"><span class="k">月柱</span><span class="v">'+r.bz.month+'</span></div>');
+    A.push('<div class="row"><span class="k">日柱</span><span class="v">'+r.bz.day+'</span></div>');
+    A.push('<div class="row"><span class="k">时柱</span><span class="v">'+(r.bz.time||'（时柱已跳过）')+'</span></div>');
+    A.push('</div>');
+  }
+  A.push('<div class="foot">© '+new Date().getFullYear()+' '+escHtml(COPYRIGHT_OWNER)+' · 保留所有权利 · 本程序仅供娱乐与参考，不构成任何专业建议</div>');
+  A.push('  <div class="toast" id="toast" role="status" aria-live="polite"></div></body></html>');
+  return A.join('');
+}
+function escHtml(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function downloadBlob(blob,filename){
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},150);
+}
+function exportWord(ev){
+  var r=window.__lastResult;if(!r){showErr('请先点击「开始计算」');return;}
+  if(ev&&ev.currentTarget){var btn=ev.currentTarget;var old=btn.textContent;btn.disabled=true;btn.textContent='⏳ 正在生成…';}
+  try{
+    var htmlContent=buildReportHTML(r);
+    /* 纯前端生成 Word 文档：以 "Word 2003 HTML" 规范包裹（Word/WPS 均可正常打开并二次编辑），
+       BOM + application/msword，扩展名 .doc。无需任何后端或联网库。 */
+    var blob=new Blob(['﻿',htmlContent],{type:'application/msword;charset=utf-8'});
+    var name=(r.name||'age-report')+'-年龄报告.doc';
+    downloadBlob(blob,name);
+    flash('📄 Word 文档已生成并下载');
+  }catch(e){showErr('生成失败：'+e.message);}
+  finally{if(btn){btn.disabled=false;btn.textContent=old;}}
+}
+
+
+/* ========== 交互优化：Enter 键提交 / 自动聚焦 ========== */
+(function(){
+  var ids=['y','m','d','h'];
+  ids.forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();calc();}});
+  });
+  /* 页面加载后自动聚焦到"年"输入框 */
+  var yf=document.getElementById('y');if(yf)yf.focus();
+  /* 数字输入框：只允许合法数字，过滤非法字符 */
+  ['y','m','d','h'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');});
+  });
+})();
+
+function resetAll(){document.getElementById('y').value='';document.getElementById('m').value='';document.getElementById('d').value='';document.getElementById('h').value='';document.getElementById('name').value='';document.getElementById('err').classList.remove('show');document.getElementById('result').classList.remove('show');window.__lastResult=null;}
+</script>
+<!-- ============ 内嵌农历引擎（1800-2200，含春节/立春精确分界、八字、虚岁、农历↔公历互转）============ -->
+<script>
+var LUNAR_ENC=[6360413,11275990,8654293,5801685,10751689,7966538,12584587,9702695,7163062,11537755,8915674,6343532,11276117,8128325,5279559,10226323,7441067,12061869,9178477,6622650,11538346,8653733,5819813,10751301,7990549,12586645,9702701,6907213,11800245,8916394,6360788,11275940,8539978,13110602,10227350,7441078,12324187,9178837,6622058,11538259,8654501,5828258,10489163,7726359,12586667,9702747,6899125,11800489,9178963,6098261,11013925,8260939,13110605,9964205,7457514,12324277,9441193,6639282,11537811,8654117,5827877,10489175,7735733,12585686,9965269,6907593,11800265,9178770,6360726,10749223,8029783,12848475,10226522,7449428,12324693,9439049,6639443,11274899,8391979,5563691,10489197,7720426,12586410,9965477,7163305,11799881,8916629,6097563,11013421,7868077,5278390,10227114,7704292,12324516,9440587,6638933,11275927,8392023,5555549,10489557,7998418,12848979,9965221,7425834,12062283,8916635,6367910,11275627,8392537,5540778,10489683,7703973,12586789,9439819,6646347,11537069,8652139,5801397,10751401,8253074,13110931,9964837,7163181,12062294,9177783,6105813,11275989,8392361,5803850,10489490,7704230,12322091,9440855,6646102,11537242,8916693,6088545,10749769,7991059,12847763,9964843,6923547,11800237,9178475,6368677,11276197,8391497,5541195,10489493,7457453,12324151,9440941,6908618,11537843,8654245,6090402,11013451,7998869,12586647,9964887,7177589,11800277,9178835,6358869,11275941,8392267,5293647,10227355,7719642,12324203,9441129,6900658,11799379,8653605,5835563,10750539,7998123,12585645,9700717,7185833,12062121,9178515,6360725,11275557,8556109,13110870,10226359,7439093,12322517,9440937,6901586,11800210,8916262,5819694,10489431,7998166,12847963,9701077,7163753,12062537,9176723,6098587,11013419,8130139,5540526,10227051,7458261,12586917,9702217,6638931,11538069,8654125,5834077,10489525,8014762,12848595,9964965,7188106,12062027,9178261,6360734,11013463,8130229,5540570,10489555,7440229,12322597,9438795,6637143,11275435,8654170,5817710,10751849,8048466,12848978,9964325,7187723,11800139,8916139,6112955,11011501,8130410,5541290,10489235,7720613,12324133,9440853,6646349,11537591,8390069,5826258,10751689,8261522,12848786,9964838,7187734,11800151,8916183,6104933,11011925,8390473,5293899,10225299,7458475,12324139,9178715,6638266,11537771,8654693,5835690,10750795,7998869,12848789,9702701,6915437,11800245,9178539,6096341,11013541,8392011,5557837,10226838,7457998,12324183,9440949,6646482,11538131,8654501,6098730,10487435,7734935,12584107,9700699,6923606,11800426,9178963,6360981,11012933,8129163,5278287,10226859,7455963,12322221,9703338,7163314,11799955,8916261,6098219,11013717,8014509,12848311,9963189,7440106,12062409,9440914,6622870,11537706,8392278,5556830,10489175,7726421,12324693,9703243,6899539,11798165,8652075,5842215,10751643,8310106,12848490,9965413,7449482,12323659,9177877,6384267,11275597,8392365,5540534,10489259,7726501,12586405,9702731,6901397,11799830,8916303,5836125,10751702,8310196,13110994,9965221,7442250,12060299,9178391,6376630,11013467,8391386,5819244,10489685,7720901,12585797,9702027,6654635,11537581,8654187,6106538,10751402,8294228,13110691,10227013,7179605,12062357,9178413,6382925,11013813,8392106,5820116,10751650,7720646,12586314,9703062,6916790,11537755,8654549,6097770,11013971,7868069,5279398,9962827,7177559,11800235,9178459,6374773,11276133,8392531,5557589,10489637,7720267,12324173,9439917,6924970,11799989];var LICHUN_ENC=[204,204,204,205,205,204,204,205,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,204,205,205,205,204,205,205,205,204,205,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,205,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,203,204,203,203,203,204,203,203,203,204,203,203,203,204,203,203,203,204,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,205,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,204,204,204,203,203,204,204,203,203,204,204,203,203,204,204,203,203,204,204];/* 内嵌农历引擎（纯前端，无外部依赖）。解码 LUNAR_ENC(1800-2200) */
+(function(global){
+  var ENC=LUNAR_ENC;var Y0=1800,YN=2200;
+  function dec(v){var cnyOff=(v>>>18)&63,leap=(v>>>14)&15,leapBig=(v>>>13)&1,md=v&4095,mdA=[];for(var i=0;i<12;i++)mdA.push((md>>i)&1?30:29);var m,d;if(cnyOff<31){m=1;d=cnyOff+1;}else if(cnyOff<62){m=2;d=cnyOff-31+1;}else{m=3;d=cnyOff-62+1;}return {ny:{m:m,d:d},leap:leap,leapBig:leapBig,monthDays:mdA};}
+  function isLeapGreg(y){return (y%4===0&&y%100!==0)||(y%400===0);}
+  function gDays(y,m,d){var t=[31,(isLeapGreg(y)?29:28),31,30,31,30,31,31,30,31,30,31];return t[m-1];}
+  function absDays(y,m,d){var n=new Date(Date.UTC(1900,0,1)),t=new Date(Date.UTC(y,m-1,d));return Math.round((t-n)/86400000);}
+  function info(y){if(y<Y0||y>YN)return null;return dec(ENC[y-Y0]);}
+  function solarToLunar(y,m,d){
+    if(y<Y0||y>YN)return null;
+    var ad=absDays(y,m,d);var prevCNY=-1,prevYear=0;
+    for(var yy=Y0;yy<=YN;yy++){var inf=dec(ENC[yy-Y0]);var cnyAbs=absDays(yy,inf.ny.m,inf.ny.d);if(cnyAbs<=ad){prevCNY=cnyAbs;prevYear=yy;}else break;}
+    var inf=dec(ENC[prevYear-Y0]);var dayOfYear=ad-prevCNY;
+    var lm=0,ld=0,rem=dayOfYear,isLeap=false,leapEmitted=false;
+    var seq=[];for(var i=0;i<12;i++)seq.push({m:i+1,days:inf.monthDays[i],isLeap:false});
+    if(inf.leap){var lp=inf.leap;var ins=-1;for(var i=0;i<seq.length;i++){if(seq[i].m===lp){ins=i;break;}}seq.splice(ins+1,0,{m:lp,days:inf.leapBig?30:29,isLeap:true});}
+    for(var i=0;i<seq.length;i++){var s=seq[i];if(rem<s.days){lm=s.m;ld=rem+1;isLeap=s.isLeap;break;}rem-=s.days;}
+    return {ly:prevYear,lm:lm,ld:ld,isLeap:isLeap};
+  }
+  function lunarToSolar(ly,lm,ld,isLeap){
+    if(ly<Y0||ly>YN)return null;var inf=dec(ENC[ly-Y0]);var cnyAbs=absDays(ly,inf.ny.m,inf.ny.d);var add=ld-1;
+    var seq=[];for(var i=0;i<12;i++)seq.push({m:i+1,days:inf.monthDays[i],isLeap:false});
+    if(inf.leap){var lp=inf.leap;var ins=-1;for(var i=0;i<seq.length;i++){if(seq[i].m===lp){ins=i;break;}}seq.splice(ins+1,0,{m:lp,days:inf.leapBig?30:29,isLeap:true});}
+    var target=isLeap;var matched=false;for(var i=0;i<seq.length;i++){var s=seq[i];if(s.m===lm&&s.isLeap===!!isLeap){matched=true;break;}add+=s.days;}
+    if(!matched)return null;var total=cnyAbs+add;var base=new Date(Date.UTC(1900,0,1));base.setUTCDate(base.getUTCDate()+total);return {y:base.getUTCFullYear(),m:base.getUTCMonth()+1,d:base.getUTCDate()};
+  }
+  var SX=['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+  function shengxiao(y,m,d){
+    var inf=info(y);if(!inf)return SX[(y-4+300)%12];
+    var cnyAbs=absDays(y,inf.ny.m,inf.ny.d);var ad=absDays(y,m,d);
+    var idxY=ad<cnyAbs?y-1:y;return SX[(idxY-4+300)%12];
+  }
+  var GAN=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'],ZHI=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  function lichunDate(y){if(y<Y0||y>YN)return null;var v=LICHUN_ENC[y-Y0];if(!v)return null;var m=Math.floor(v/100),dd=v%100;return new Date(y,m-1,dd);}
+  function yearGanZhi(y,m,d,mode){
+    mode=mode||'spring';var inf=info(y);if(!inf)return GAN[(y-4+300)%10]+ZHI[(y-4+300)%12];
+    var idxY=y;
+    if(mode==='spring'){var cnyAbs=absDays(y,inf.ny.m,inf.ny.d);if(absDays(y,m,d)<cnyAbs)idxY=y-1;}
+    else{var lc=lichunDate(y);if(lc&&new Date(y,m-1,d)<lc)idxY=y-1;}
+    return GAN[(idxY-4+300)%10]+ZHI[(idxY-4+300)%12];
+  }
+  function dayGanZhi(y,m,d){var ad=absDays(y,m,d);var idx=(10+ad)%60;return GAN[idx%10]+ZHI[idx%12];}
+  function monthGanZhi(y,m,d,lm){var ygz=yearGanZhi(y,m,d);var yg=GAN.indexOf(ygz[0]);var mg=(yg%5)*2+lm-1;return GAN[((mg%10)+10)%10]+ZHI[((lm+1)%12+12)%12];}
+  function hourGanZhi(y,m,d,h){var dg=dayGanZhi(y,m,d);var g=GAN.indexOf(dg[0]);var zi=Math.floor(h/2);if(h===23)zi=0;return GAN[((g%5)*2+zi+10)%10]+ZHI[zi];}
+  function baZi(y,m,d,h,mode){mode=mode||'spring';var sl=solarToLunar(y,m,d);if(!sl)return null;var yg=yearGanZhi(y,m,d,mode);var mg=monthGanZhi(y,m,d,sl.lm);var dg=dayGanZhi(y,m,d);var tg=h===null||h===undefined?'':hourGanZhi(y,m,d,h);return {year:yg,month:mg,day:dg,time:tg};}
+  var MONTH_C=['正','二','三','四','五','六','七','八','九','十','冬','腊'];
+  var DAY_C=['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+  function lunarChinese(y,m,d){var sl=solarToLunar(y,m,d);if(!sl)return null;var mc=sl.lm<=10?MONTH_C[sl.lm-1]:(sl.lm===11?'冬':'腊');if(sl.lm===11)mc='冬';return {isLeap:sl.isLeap,monthStr:(sl.isLeap?'闰':'')+MONTH_C[sl.lm-1]+'月',dayStr:DAY_C[sl.ld-1],full:(sl.isLeap?'闰':'')+MONTH_C[sl.lm-1]+'月'+DAY_C[sl.ld-1]};}
+  function xuAge(y,m,d){
+    if(y<Y0||y>YN)return null;var today=new Date();var ty=today.getFullYear(),tm=today.getMonth()+1,td=today.getDate();
+    if(y>ty||(y===ty&&m>tm)||(y===ty&&m===tm&&d>td))return null;
+    var birthAbs=absDays(y,m,d);
+    var inf=info(y);var birthCNYAbs=absDays(y,inf.ny.m,inf.ny.d);
+    var birthLunarYear=y;if(birthAbs<birthCNYAbs)birthLunarYear=y-1;
+    var infT=info(ty);var cnyTAbs=absDays(ty,infT.ny.m,infT.ny.d);var nowAbs=absDays(ty,tm,td);
+    var curLunarYear=nowAbs>=cnyTAbs?ty:ty-1;
+    var x=curLunarYear-birthLunarYear+1;return x<1?1:x;
+  }
+
+  /* ===== 升级：精确的"已活毫秒/小时"与"距成年"计算（小时级精度）===== */
+  function livedMs(y,m,d){
+    var b=new Date(y,m-1,d);var now=new Date();
+    b.setHours(0,0,0,0);var t=now.getTime()-b.getTime();return t<0?0:t;
+  }
+  function livedDetail(y,m,d){
+    var ms=livedMs(y,m,d);var days=Math.floor(ms/86400000);
+    var years=Math.floor(days/365.25);var rem=days-Math.floor(years*365.25);
+    var months=Math.floor(rem/30.44);var ddays=Math.floor(rem-months*30.44);
+    return {ms:ms,days:days,years:years,months:months,ddays:ddays};
+  }
+  function adultTarget(y,m,d){var e18y=y+18,e18m=m,e18d=d;if(e18d>gDays(e18y,e18m))e18d=gDays(e18y,e18m);return {y:e18y,m:e18m,d:e18d};}
+  function daysToAdultExact(y,m,d){
+    var t=adultTarget(y,m,d);var target=new Date(t.y,t.m-1,t.d);target.setHours(0,0,0,0);
+    var now=new Date();now.setHours(0,0,0,0);var diff=Math.round((target-now)/86400000);return diff>0?diff:0;
+  }
+  function adultProgress(y,m,d){
+    /* 0岁生日 -> 18岁生日 的进度百分比 */
+    var b=new Date(y,m-1,d);b.setHours(0,0,0,0);var t=adultTarget(y,m,d);var target=new Date(t.y,t.m-1,t.d);target.setHours(0,0,0,0);
+    var now=new Date();now.setHours(0,0,0,0);var total=target-b;var passed=now-b;
+    if(total<=0)return 100;if(passed<=0)return 0;var p=passed/total*100;return p>100?100:(p<0?0:p);
+  }
+  function adultBreakdown(y,m,d){
+    var days=daysToAdultExact(y,m,d);var years=Math.floor(days/365.25);var rem=days-Math.floor(years*365.25);
+    var months=Math.floor(rem/30.44);var dd=Math.floor(rem-months*30.44);return {days:days,years:years,months:months,daysRem:dd};
+  }
+  global.LunarEngine={solarToLunar:function(y,m,d){var r=solarToLunar(y,m,d);return r?{year:r.ly,month:r.lm,day:r.ld,isLeap:r.isLeap}:null;},lunarToSolar:lunarToSolar,shengxiao:shengxiao,yearGanZhi:yearGanZhi,dayGanZhi:dayGanZhi,monthGanZhi:function(y,m,d){var sl=solarToLunar(y,m,d);return sl?monthGanZhi(y,m,d,sl.lm):null;},hourGanZhi:hourGanZhi,baZi:baZi,lunarChinese:lunarChinese,xuAge:xuAge,hasYear:function(y){return y>=Y0&&y<=YN;},Y0:Y0,YN:YN,
+  /* 升级 API */
+  livedMs:livedMs,livedDetail:livedDetail,daysToAdultExact:daysToAdultExact,
+  adultProgress:adultProgress,adultBreakdown:adultBreakdown,adultTarget:adultTarget,
+  nowDate:function(){var n=new Date();return {y:n.getFullYear(),m:n.getMonth()+1,d:n.getDate()};}
+};})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* ========== 封面背景：星空粒子 ========== */
+(function(){
+  var cv=document.getElementById('stars');if(!cv)return;
+  var ctx=cv.getContext('2d'),stars=[],w,h,dpr=Math.min(window.devicePixelRatio||1,2);
+  function resize(){w=cv.width=innerWidth*dpr;h=cv.height=innerHeight*dpr;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';init();}
+  function init(){stars=[];var n=Math.floor(innerWidth*0.18);for(var i=0;i<n;i++){stars.push({x:Math.random()*w,y:Math.random()*h,r:(Math.random()*1.6+0.3)*dpr,a:Math.random()*Math.PI*2,s:Math.random()*0.02+0.005,o:Math.random()*0.6+0.3});}}
+  function tick(){ctx.clearRect(0,0,w,h);for(var i=0;i<stars.length;i++){var s=stars[i];s.a+=s.s;s.o+=Math.sin(s.a)*0.01;s.o=Math.max(0.15,Math.min(0.95,s.o));ctx.beginPath();ctx.fillStyle='rgba(255,255,255,'+s.o.toFixed(3)+')';ctx.arc(s.x,s.y,s.r,0,s.r>2?Math.PI*2:Math.PI*2);ctx.fill();}requestAnimationFrame(tick);}
+  addEventListener('resize',resize);resize();tick();
+})();
+</script>
+<script>
+/* ========== 星座连线：稀疏亮点 + 邻近连线（星空之外的星河网络）========== */
+(function(){
+  var cv=document.getElementById('constellation');if(!cv)return;
+  var ctx=cv.getContext('2d'),pts=[],w,h,dpr=Math.min(window.devicePixelRatio||1,2);
+  var NODES=26,MAXD=150;
+  function resize(){w=cv.width=innerWidth*dpr;h=cv.height=innerHeight*dpr;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';init();}
+  function init(){pts=[];for(var i=0;i<NODES;i++){pts.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.15*dpr,vy:(Math.random()-.5)*.15*dpr,r:(Math.random()*.8+1.2)*dpr});}}
+  function tick(){ctx.clearRect(0,0,w,h);
+    for(var i=0;i<pts.length;i++){var p=pts[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;}
+    for(var i=0;i<pts.length;i++){for(var j=i+1;j<pts.length;j++){
+      var dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,dd=Math.sqrt(dx*dx+dy*dy);
+      if(dd<MAXD*dpr){var a=(1-dd/(MAXD*dpr))*.35;ctx.strokeStyle='rgba(180,139,255,'+a.toFixed(3)+')';ctx.lineWidth=.8*dpr;ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.stroke();}}}
+    for(var i=0;i<pts.length;i++){var p=pts[i];ctx.beginPath();ctx.fillStyle='rgba(180,139,255,.55)';ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
+    requestAnimationFrame(tick);}
+  addEventListener('resize',resize);resize();tick();
+})();
+</script>
+</body>
+</html>
